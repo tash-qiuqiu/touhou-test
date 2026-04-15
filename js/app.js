@@ -98,7 +98,67 @@ createApp({
             return array;
         };
 
-        const drawRadarChart = (scores) => { /* 这里保留上一版雷达图的绘制逻辑代码 */ };
+        const drawRadarChart = (scores) => {
+            const canvas = document.getElementById('radarChart');
+            if (!canvas) return;
+
+            // 销毁旧图表实例（防止重复渲染）
+            if (canvas._chartInstance) {
+                canvas._chartInstance.destroy();
+            }
+
+            const labels = ['资金 (B/D)', '管理 (A/C)', '外交 (U/I)', '内容 (H/E)', '革新 (R/T)', '意志 (W/P)'];
+            const dims = ['BD', 'AC', 'UI', 'HE', 'RT', 'WP'];
+            // 将原始分数归一化到 0-100 范围，0分对应50
+            const maxPossible = 18; // 每个维度最多9题 × 2分
+            const data = dims.map(d => Math.round((scores[d] / maxPossible + 1) * 50));
+
+            const chart = new Chart(canvas, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '你的维度得分',
+                        data: data,
+                        backgroundColor: 'rgba(220, 38, 38, 0.15)',
+                        borderColor: 'rgba(220, 38, 38, 0.8)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(220, 38, 38, 1)',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 100,
+                            ticks: { stepSize: 25, display: false },
+                            grid: { color: 'rgba(0,0,0,0.06)' },
+                            angleLines: { color: 'rgba(0,0,0,0.08)' },
+                            pointLabels: {
+                                font: { size: 13, weight: 'bold' },
+                                color: '#374151'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const raw = scores[dims[ctx.dataIndex]];
+                                    return `原始分: ${raw > 0 ? '+' : ''}${raw}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            canvas._chartInstance = chart;
+        };
 
         const submitData = async () => {
             isSubmitting.value = true;
