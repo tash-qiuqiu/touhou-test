@@ -98,66 +98,56 @@ createApp({
             return array;
         };
 
+
+        // ========== 雷达图绘制逻辑 (Chart.js) ==========
         const drawRadarChart = (scores) => {
             const canvas = document.getElementById('radarChart');
             if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            // 将真实的原始得分映射到 0-100 用于雷达图展示
+            // 假设单维度最高分为20，最低分为-20，映射公式为：((得分 + 20) / 40) * 100
+            const mapScore = (val) => Math.max(0, Math.min(100, ((val + 20) / 40) * 100));
 
-            // 销毁旧图表实例（防止重复渲染）
-            if (canvas._chartInstance) {
-                canvas._chartInstance.destroy();
-            }
-
-            const labels = ['资金 (B/D)', '管理 (A/C)', '外交 (U/I)', '内容 (H/E)', '革新 (R/T)', '意志 (W/P)'];
-            const dims = ['BD', 'AC', 'UI', 'HE', 'RT', 'WP'];
-            // 将原始分数归一化到 0-100 范围，0分对应50
-            const maxPossible = 18; // 每个维度最多9题 × 2分
-            const data = dims.map(d => Math.round((scores[d] / maxPossible + 1) * 50));
-
-            const chart = new Chart(canvas, {
+            new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: labels,
+                    labels: ['商业现实(B)', '集权效率(A)', '联合开放(U)', '硬核企划(H)', '反叛革新(R)', '事业爆肝(W)'],
                     datasets: [{
-                        label: '你的维度得分',
-                        data: data,
-                        backgroundColor: 'rgba(220, 38, 38, 0.15)',
-                        borderColor: 'rgba(220, 38, 38, 0.8)',
-                        borderWidth: 2,
+                        label: '能力倾向',
+                        data: [
+                            mapScore(scores.BD), 
+                            mapScore(scores.AC), 
+                            mapScore(scores.UI), 
+                            mapScore(scores.HE), 
+                            mapScore(scores.RT), 
+                            mapScore(scores.WP)
+                        ],
+                        backgroundColor: 'rgba(220, 38, 38, 0.2)', // 红色半透明填充
+                        borderColor: 'rgba(220, 38, 38, 1)', // 红色边框
                         pointBackgroundColor: 'rgba(220, 38, 38, 1)',
-                        pointRadius: 4,
-                        pointHoverRadius: 6
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(220, 38, 38, 1)'
                     }]
                 },
                 options: {
-                    responsive: true,
                     scales: {
                         r: {
-                            min: 0,
-                            max: 100,
-                            ticks: { stepSize: 25, display: false },
-                            grid: { color: 'rgba(0,0,0,0.06)' },
-                            angleLines: { color: 'rgba(0,0,0,0.08)' },
-                            pointLabels: {
-                                font: { size: 13, weight: 'bold' },
-                                color: '#374151'
-                            }
+                            angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                            pointLabels: { 
+                                font: { size: 12, family: 'sans-serif', weight: 'bold' }, 
+                                color: '#374151' 
+                            },
+                            ticks: { display: false, min: 0, max: 100 } // 隐藏具体的刻度数字，保持美观
                         }
                     },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: (ctx) => {
-                                    const raw = scores[dims[ctx.dataIndex]];
-                                    return `原始分: ${raw > 0 ? '+' : ''}${raw}`;
-                                }
-                            }
-                        }
+                    plugins: { 
+                        legend: { display: false } // 隐藏顶部图例
                     }
                 }
             });
-
-            canvas._chartInstance = chart;
         };
 
         const submitData = async () => {
