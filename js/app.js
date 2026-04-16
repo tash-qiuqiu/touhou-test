@@ -2,7 +2,7 @@ const { createApp, ref, computed, onMounted, nextTick } = Vue;
 
 createApp({
     setup() {
-        const step = ref('start'); // 流程：start -> pre_survey -> testing -> result
+        const step = ref('start'); // start -> pre_survey -> testing -> result
         const questions = ref([]); 
         const charactersData = ref({}); 
         const currentIndex = ref(0); 
@@ -12,7 +12,7 @@ createApp({
         const matchedCharacter = ref({}); 
         const isNeutral = ref(false); 
 
-        // 【新增】：学术调查问卷的数据绑定
+        // 学术调查问卷的数据绑定
         const userInfo = ref({
             university: '',
             attendCount: '',
@@ -21,7 +21,8 @@ createApp({
             otherRole: '',
             isStable: '',
             audience: '',
-            phone: ''
+            phone: '',
+            skipped: false // 标记该用户是否跳过了问卷
         });
 
         const options = [
@@ -47,7 +48,6 @@ createApp({
 
         const currentQuestion = computed(() => questions.value[currentIndex.value]);
 
-        // 【新增】：校验基本信息是否填写完整
         const isUserInfoComplete = computed(() => {
             return userInfo.value.university.trim() !== '' &&
                    userInfo.value.attendCount !== '' &&
@@ -57,15 +57,23 @@ createApp({
                    userInfo.value.audience !== '';
         });
 
-        // 从开始页 -> 进入问卷页
+        // 进入填表页
         const startSurvey = () => { 
             step.value = 'pre_survey'; 
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // 从问卷页 -> 进入核心60题测试
+        // 直接跳过表单，进入测试
+        const skipSurvey = () => {
+            userInfo.value.skipped = true; // 打上标记
+            step.value = 'testing';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        // 填完表单后进入测试
         const startMainTest = () => {
             if (!isUserInfoComplete.value) return;
+            userInfo.value.skipped = false;
             step.value = 'testing';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
@@ -172,9 +180,8 @@ createApp({
         };
 
         const silentUploadData = () => {
-            // 【重要数据处理】：把学术调查数据和答题明细打包成一个大 JSON，塞进 answers 里
             const combinedData = {
-                researchInfo: userInfo.value,
+                researchInfo: userInfo.value, // 如果用户跳过了，这里的数据会是空的，并且 skipped: true
                 testAnswers: answers.value
             };
 
@@ -183,7 +190,7 @@ createApp({
                 character: matchedCharacter.value.name || "未知",
                 isNeutral: isNeutral.value ? 'true' : 'false',
                 submitTime: new Date().toISOString(),
-                answers: JSON.stringify(combinedData) // 完美兼容你原有的阿里云后台，无需改库！
+                answers: JSON.stringify(combinedData) 
             };
 
             // 【务必填写你的阿里云函数公网地址】
@@ -202,7 +209,7 @@ createApp({
             step, questions, currentIndex, currentQuestion, options, 
             finalResultCode, isNeutral, matchedCharacter, 
             userInfo, isUserInfoComplete,
-            startSurvey, startMainTest, selectOption, prevQuestion
+            startSurvey, skipSurvey, startMainTest, selectOption, prevQuestion
         };
     }
 }).mount('#app');

@@ -24,27 +24,40 @@
             <p class="text-lg font-bold">正在连接幻想乡...</p>
         </div>
 
-        <!-- 欢迎页 & 知情同意书 -->
-        <div v-else-if="step === 'start'" class="p-8">
-            <h1 class="text-3xl font-black mb-4 text-center tracking-wide">测一测你办车万例会<br><span class="text-red-600">像哪一个角色？</span></h1>
+        <!-- 首页：测试介绍 & 知情同意书 -->
+        <div v-else-if="step === 'start'" class="p-6 md:p-8">
+            <h1 class="text-3xl font-black mb-6 text-center tracking-wide">测一测你办车万例会<br><span class="text-red-600">像哪一个角色？</span></h1>
             
-            <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-8 text-sm text-gray-600 leading-relaxed shadow-inner">
-                <h3 class="font-bold text-gray-800 mb-2 flex items-center">
-                    <span class="text-xl mr-2">🧠</span> 知情说明
-                </h3>
-                <p class="mb-2">本测试同时用于一项关于“中国高校东方Project同人社群与例会组织模式”的学术科研研究。</p>
-                <p class="mb-2">你的参与是完全自愿的，所有数据将以匿名形式进行分析，不涉及任何个人身份识别。你可以随时退出网页停止测试。</p>
-                <p class="font-bold text-red-600">点击下方按钮，即表示你已了解上述信息并同意参与。</p>
+            <!-- 测试本身的说明 -->
+            <div class="mb-6 text-gray-700 leading-relaxed">
+                <h3 class="font-bold text-lg mb-2 flex items-center"><span class="mr-2">💡</span>测试说明</h3>
+                <p class="text-sm">本测试共60题，涵盖资金、管理、外交、内容等六大维度。请根据你在高校东方例会中的真实想法进行选择。测试结束后，将为你生成专属的<strong>例会角色面板</strong>与<strong>能力雷达图</strong>。</p>
             </div>
 
-            <button @click="startSurvey" class="bg-red-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-red-700 transition shadow-lg hover:shadow-red-500/50 w-full block text-center">
-                同意并填写基本信息
-            </button>
+            <!-- 学术科研说明 -->
+            <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-8 text-sm text-gray-600 leading-relaxed shadow-inner">
+                <h3 class="font-bold text-gray-800 mb-2 flex items-center">
+                    <span class="text-lg mr-2">🧠</span> 科研知情说明
+                </h3>
+                <p class="mb-2">本测试同时用于一项关于“中国高校东方Project同人社群与例会组织模式”的学术科研研究。</p>
+                <p>参与完全自愿，数据将以匿名形式分析。您可以选择留下您的例会履历深度助力研究（并参与抽奖），也可以选择直接跳过，仅体验趣味角色测试。</p>
+            </div>
+
+            <!-- 核心分流按钮 -->
+            <div class="flex flex-col space-y-3">
+                <button @click="startSurvey" class="bg-red-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-red-700 transition shadow-lg w-full text-center flex justify-center items-center">
+                    <span>填写例会履历并测试 (含抽奖)</span>
+                </button>
+                <button @click="skipSurvey" class="bg-gray-200 text-gray-600 px-8 py-3 rounded-xl font-bold hover:bg-gray-300 transition w-full text-center">
+                    跳过履历，直接测角色
+                </button>
+            </div>
         </div>
 
-        <!-- 学术前置问卷 (Pre-survey) -->
+        <!-- 东方例会履历档案 (原基本信息调查) -->
         <div v-if="step === 'pre_survey'" class="p-6 md:p-8">
-            <h2 class="text-xl font-bold mb-6 border-b pb-2">基本信息调查</h2>
+            <h2 class="text-2xl font-bold mb-2 border-b pb-3 flex items-center"><span class="mr-2">📜</span> 高校车万例会履历档案收集</h2>
+            <p class="text-gray-500 text-sm mb-6">请留下您的组织或参与经验，助力车万学术研究！</p>
             
             <div class="space-y-6">
                 <!-- Q1 -->
@@ -78,16 +91,14 @@
                 <!-- Q4 -->
                 <div>
                     <label class="block font-bold mb-2">您在高校东方例会中主要承担过的角色是？[多选] <span class="text-red-500">*</span></label>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-2 gap-3 text-sm md:text-base">
                         <label class="flex items-center space-x-2"><input type="checkbox" v-model="userInfo.roles" value="主催/总策划" class="text-red-600 rounded"><span>主催/总策划</span></label>
                         <label class="flex items-center space-x-2"><input type="checkbox" v-model="userInfo.roles" value="文案/剧情" class="text-red-600 rounded"><span>文案/剧情</span></label>
                         <label class="flex items-center space-x-2"><input type="checkbox" v-model="userInfo.roles" value="美工/视觉" class="text-red-600 rounded"><span>美工/视觉</span></label>
                         <label class="flex items-center space-x-2"><input type="checkbox" v-model="userInfo.roles" value="场务/后勤" class="text-red-600 rounded"><span>场务/后勤</span></label>
                         <label class="flex items-center space-x-2"><input type="checkbox" v-model="userInfo.roles" value="外联/宣传" class="text-red-600 rounded"><span>外联/宣传</span></label>
                         <label class="flex items-center space-x-2"><input type="checkbox" v-model="userInfo.roles" value="演职人员" class="text-red-600 rounded"><span>演职人员</span></label>
-                        <label class="flex items-center space-x-2">
-                            <input type="checkbox" v-model="userInfo.roles" value="其他" class="text-red-600 rounded"><span>其他</span>
-                        </label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" v-model="userInfo.roles" value="其他" class="text-red-600 rounded"><span>其他</span></label>
                     </div>
                     <input v-if="userInfo.roles.includes('其他')" type="text" v-model="userInfo.otherRole" placeholder="请具体说明其他角色..." class="w-full mt-2 border border-gray-300 px-4 py-2 rounded-lg text-sm outline-none">
                 </div>
@@ -103,8 +114,8 @@
 
                 <!-- Q6 -->
                 <div>
-                    <label class="block font-bold mb-2">您的学校的东方例会通常的受众定位是？ <span class="text-red-500">*</span></label>
-                    <div class="flex flex-col space-y-2">
+                    <label class="block font-bold mb-2">您学校的东方例会通常的受众定位是？ <span class="text-red-500">*</span></label>
+                    <div class="flex flex-col space-y-3">
                         <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.audience" value="仅限本校学生" class="text-red-600"><span>仅限本校学生</span></label>
                         <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.audience" value="主要面向大学城/周边高校的学生" class="text-red-600"><span>主要面向大学城/周边高校的学生</span></label>
                         <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.audience" value="完全对外公开包容社会人士" class="text-red-600"><span>完全对外公开包容社会人士</span></label>
@@ -114,18 +125,21 @@
                 <!-- 抽奖模块 -->
                 <div class="bg-yellow-50 p-5 rounded-xl border border-yellow-200 mt-8">
                     <h3 class="font-bold text-yellow-800 mb-2 flex items-center">
-                        <span class="text-lg mr-1">🎁</span> 感谢助力学术研究，参与抽奖
+                        <span class="text-lg mr-1">🎁</span> 感谢助力，参与抽奖
                     </h3>
                     <p class="text-xs text-yellow-700 mb-3">奖池配置：50 元 × 4名。<br>说明：请留下手机号（仅用于中奖后支付宝发放）。数据已做严格匿名化处理，请放心填写。</p>
                     <input type="tel" v-model="userInfo.phone" placeholder="选填：您的联系手机号" class="w-full border border-yellow-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none bg-white">
                 </div>
             </div>
 
-            <div class="mt-8 text-center">
-                <p v-if="!isUserInfoComplete" class="text-red-500 text-sm mb-3">* 请完成所有必填项（带星号）</p>
-                <button @click="startMainTest" :disabled="!isUserInfoComplete" class="bg-gray-800 text-white px-10 py-3 rounded-full font-bold hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto">
-                    进入核心角色测试
+            <div class="mt-8 text-center flex flex-col space-y-3">
+                <button @click="startMainTest" :disabled="!isUserInfoComplete" class="bg-gray-800 text-white px-10 py-3 rounded-xl font-bold hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed w-full">
+                    提交履历并开始测试
                 </button>
+                <button @click="skipSurvey" class="text-gray-500 hover:text-gray-800 text-sm underline decoration-gray-300">
+                    不想填了，直接跳过测角色
+                </button>
+                <p v-if="!isUserInfoComplete" class="text-red-500 text-xs mt-1">* 请完成所有必填项（带星号）才能提交</p>
             </div>
         </div>
 
