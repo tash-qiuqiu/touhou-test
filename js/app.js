@@ -12,6 +12,7 @@ createApp({
         const matchedCharacter = ref({}); 
         const isNeutral = ref(false); 
         const isDownloading = ref(false);
+        const previewImageUrl = ref(null);
 
         // 学术调查问卷的数据绑定
         const userInfo = ref({
@@ -197,28 +198,34 @@ createApp({
             });
         };
 
-        // 新增功能：一键将结果卡片生成图片并下载
+        // 生成结果图片并弹出预览（手机端长按可保存）
         const downloadResult = async () => {
             isDownloading.value = true;
             try {
                 const element = document.getElementById('result-card');
                 const canvas = await html2canvas(element, {
-                    scale: 2, // 提高清晰度
-                    useCORS: true, // 允许跨域加载角色图片
+                    scale: 2,
+                    useCORS: true,
                     backgroundColor: '#f9fafb'
                 });
-                
-                // 将画布转换为图片并触发下载
-                const link = document.createElement('a');
-                link.download = `车万例会成分测试_${matchedCharacter.value.name}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                previewImageUrl.value = canvas.toDataURL('image/png');
             } catch (err) {
                 console.error("生成图片失败", err);
                 alert("生成图片失败，请尝试直接截图分享！");
             } finally {
                 isDownloading.value = false;
             }
+        };
+
+        const closePreview = () => {
+            previewImageUrl.value = null;
+        };
+
+        const directDownload = () => {
+            const link = document.createElement('a');
+            link.download = `车万例会成分测试_${matchedCharacter.value.name}.png`;
+            link.href = previewImageUrl.value;
+            link.click();
         };
 
         const silentUploadData = () => {
@@ -250,9 +257,9 @@ createApp({
         return { 
             step, questions, currentIndex, currentQuestion, options, 
             finalResultCode, isNeutral, matchedCharacter, 
-            userInfo, isUserInfoComplete, isDownloading,
+            userInfo, isUserInfoComplete, isDownloading, previewImageUrl,
             startSurvey, skipSurvey, startMainTest, selectOption, prevQuestion,
-            restartTest, downloadResult
+            restartTest, downloadResult, closePreview, directDownload
         };
     }
 }).mount('#app');
