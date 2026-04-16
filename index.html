@@ -4,119 +4,177 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>测一测你办车万例会像哪一个车万角色？</title>
-    <!-- 引入必要的依赖库 -->
+    <!-- 引入 Vue 和 Tailwind -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Chart.js 用于绘制雷达图 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { background-color: #f3f4f6; font-family: 'Microsoft YaHei', sans-serif; }
         .bg-pattern { background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px; }
-        [v-cloak] { display: none; } /* 防止页面加载瞬间闪烁乱码 */
+        button { user-select: none; -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
-<body class="bg-pattern">
-<div id="app" v-cloak class="min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden min-h-[400px] flex flex-col relative">
+<body class="bg-pattern text-gray-800">
+<div id="app" class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden">
         
-        <!-- 状态1：等待异步拉取 JSON 数据 (显示加载动画) -->
-        <div v-if="step === 'start' && questions.length === 0" class="flex-1 flex flex-col items-center justify-center p-12 text-gray-500">
-            <svg class="animate-spin h-10 w-10 text-red-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p class="text-lg font-bold animate-pulse">正在连接幻想乡数据库...</p>
+        <!-- 数据加载中 -->
+        <div v-if="step === 'start' && questions.length === 0" class="p-16 text-center text-gray-500 animate-pulse">
+            <p class="text-lg font-bold">正在连接幻想乡...</p>
         </div>
 
-        <!-- 状态2：欢迎页 (数据加载完毕后显示) -->
-        <div v-else-if="step === 'start' && questions.length > 0" class="p-8 text-center flex-1 flex flex-col justify-center">
-            <h1 class="text-3xl font-black mb-4 text-gray-800 tracking-wide">测一测你办车万例会<br><span class="text-red-600">像哪一个车万角色？</span></h1>
-            <p class="text-gray-600 mb-8 text-left leading-relaxed">
-                说明：本测试共60题，涵盖资金、管理、外交、内容等六大维度。<br>
-                请根据你在高校东方例会中的真实想法进行选择。测试结束后，将为你生成专属的<strong>例会角色面板</strong>与<strong>能力雷达图</strong>。
-            </p>
-            <div>
-                <button @click="startTest" class="bg-red-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-red-700 transition shadow-lg hover:shadow-red-500/50">开始测试</button>
+        <!-- 欢迎页 & 知情同意书 -->
+        <div v-else-if="step === 'start'" class="p-8">
+            <h1 class="text-3xl font-black mb-4 text-center tracking-wide">测一测你办车万例会<br><span class="text-red-600">像哪一个角色？</span></h1>
+            
+            <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-8 text-sm text-gray-600 leading-relaxed shadow-inner">
+                <h3 class="font-bold text-gray-800 mb-2 flex items-center">
+                    <span class="text-xl mr-2">🧠</span> 知情说明
+                </h3>
+                <p class="mb-2">本测试同时用于一项关于“中国高校东方Project同人社群与例会组织模式”的学术科研研究。</p>
+                <p class="mb-2">你的参与是完全自愿的，所有数据将以匿名形式进行分析，不涉及任何个人身份识别。你可以随时退出网页停止测试。</p>
+                <p class="font-bold text-red-600">点击下方按钮，即表示你已了解上述信息并同意参与。</p>
+            </div>
+
+            <button @click="startSurvey" class="bg-red-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-red-700 transition shadow-lg hover:shadow-red-500/50 w-full block text-center">
+                同意并填写基本信息
+            </button>
+        </div>
+
+        <!-- 学术前置问卷 (Pre-survey) -->
+        <div v-if="step === 'pre_survey'" class="p-6 md:p-8">
+            <h2 class="text-xl font-bold mb-6 border-b pb-2">基本信息调查</h2>
+            
+            <div class="space-y-6">
+                <!-- Q1 -->
+                <div>
+                    <label class="block font-bold mb-2">您所在的高校是？ <span class="text-red-500">*</span></label>
+                    <input type="text" v-model="userInfo.university" placeholder="请填写学校全名" class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
+                </div>
+
+                <!-- Q2 -->
+                <div>
+                    <label class="block font-bold mb-2">您参与高校东方例会的次数？ <span class="text-red-500">*</span></label>
+                    <div class="flex flex-wrap gap-4">
+                        <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.attendCount" value="从未" class="text-red-600"><span>从未</span></label>
+                        <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.attendCount" value="1次" class="text-red-600"><span>1次</span></label>
+                        <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.attendCount" value="2-4次" class="text-red-600"><span>2-4次</span></label>
+                        <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.attendCount" value="5次及以上" class="text-red-600"><span>5次及以上</span></label>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div>
+                    <label class="block font-bold mb-2">您参与组织高校东方例会的次数？ <span class="text-red-500">*</span></label>
+                    <div class="flex flex-wrap gap-4">
+                        <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.orgCount" value="从未" class="text-red-600"><span>从未</span></label>
+                        <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.orgCount" value="1次" class="text-red-600"><span>1次</span></label>
+                        <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.orgCount" value="2-4次" class="text-red-600"><span>2-4次</span></label>
+                        <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.orgCount" value="5次及以上" class="text-red-600"><span>5次及以上</span></label>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div>
+                    <label class="block font-bold mb-2">您在高校东方例会中主要承担过的角色是？[多选] <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center space-x-2"><input type="checkbox" v-model="userInfo.roles" value="主催/总策划" class="text-red-600 rounded"><span>主催/总策划</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" v-model="userInfo.roles" value="文案/剧情" class="text-red-600 rounded"><span>文案/剧情</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" v-model="userInfo.roles" value="美工/视觉" class="text-red-600 rounded"><span>美工/视觉</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" v-model="userInfo.roles" value="场务/后勤" class="text-red-600 rounded"><span>场务/后勤</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" v-model="userInfo.roles" value="外联/宣传" class="text-red-600 rounded"><span>外联/宣传</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" v-model="userInfo.roles" value="演职人员" class="text-red-600 rounded"><span>演职人员</span></label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" v-model="userInfo.roles" value="其他" class="text-red-600 rounded"><span>其他</span>
+                        </label>
+                    </div>
+                    <input v-if="userInfo.roles.includes('其他')" type="text" v-model="userInfo.otherRole" placeholder="请具体说明其他角色..." class="w-full mt-2 border border-gray-300 px-4 py-2 rounded-lg text-sm outline-none">
+                </div>
+
+                <!-- Q5 -->
+                <div>
+                    <label class="block font-bold mb-2">您的学校目前是否能够稳定组织东方例会？ <span class="text-red-500">*</span></label>
+                    <div class="flex gap-6">
+                        <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.isStable" value="能" class="text-red-600"><span>能</span></label>
+                        <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.isStable" value="不能" class="text-red-600"><span>不能</span></label>
+                    </div>
+                </div>
+
+                <!-- Q6 -->
+                <div>
+                    <label class="block font-bold mb-2">您的学校的东方例会通常的受众定位是？ <span class="text-red-500">*</span></label>
+                    <div class="flex flex-col space-y-2">
+                        <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.audience" value="仅限本校学生" class="text-red-600"><span>仅限本校学生</span></label>
+                        <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.audience" value="主要面向大学城/周边高校的学生" class="text-red-600"><span>主要面向大学城/周边高校的学生</span></label>
+                        <label class="flex items-center space-x-2"><input type="radio" v-model="userInfo.audience" value="完全对外公开包容社会人士" class="text-red-600"><span>完全对外公开包容社会人士</span></label>
+                    </div>
+                </div>
+
+                <!-- 抽奖模块 -->
+                <div class="bg-yellow-50 p-5 rounded-xl border border-yellow-200 mt-8">
+                    <h3 class="font-bold text-yellow-800 mb-2 flex items-center">
+                        <span class="text-lg mr-1">🎁</span> 感谢助力学术研究，参与抽奖
+                    </h3>
+                    <p class="text-xs text-yellow-700 mb-3">奖池配置：50 元 × 4名。<br>说明：请留下手机号（仅用于中奖后支付宝发放）。数据已做严格匿名化处理，请放心填写。</p>
+                    <input type="tel" v-model="userInfo.phone" placeholder="选填：您的联系手机号" class="w-full border border-yellow-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none bg-white">
+                </div>
+            </div>
+
+            <div class="mt-8 text-center">
+                <p v-if="!isUserInfoComplete" class="text-red-500 text-sm mb-3">* 请完成所有必填项（带星号）</p>
+                <button @click="startMainTest" :disabled="!isUserInfoComplete" class="bg-gray-800 text-white px-10 py-3 rounded-full font-bold hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto">
+                    进入核心角色测试
+                </button>
             </div>
         </div>
 
-        <!-- 状态3：答题页 -->
-        <div v-if="step === 'testing'" class="p-8 flex-1">
+        <!-- 答题页 -->
+        <div v-if="step === 'testing'" class="p-6 md:p-8">
             <div class="flex justify-between text-sm text-gray-400 mb-4 font-mono">
                 <span>进度: {{ currentIndex + 1 }} / {{ questions.length }}</span>
             </div>
-            
             <div class="h-2 w-full bg-gray-100 rounded-full mb-8">
                 <div class="h-2 bg-red-500 rounded-full transition-all duration-300" :style="{ width: ((currentIndex + 1) / questions.length * 100) + '%' }"></div>
             </div>
-
-            <h2 class="text-xl font-bold mb-8 text-gray-800 min-h-[5rem] leading-relaxed">
-                {{ currentQuestion.text }}
-            </h2>
-
+            <h2 class="text-xl font-bold mb-8 min-h-[5rem] leading-relaxed">{{ currentQuestion.text }}</h2>
             <div class="flex flex-col space-y-3">
-                <button v-for="opt in options" :key="opt.value" 
-                        @click="selectOption(opt.value)"
-                        class="w-full text-left px-5 py-4 rounded-xl border-2 border-gray-100 hover:bg-red-50 hover:border-red-400 transition font-medium text-gray-700">
+                <button v-for="opt in options" :key="opt.value" @click="selectOption(opt.value)" class="w-full text-left px-5 py-4 rounded-xl border-2 border-gray-100 hover:bg-red-50 hover:border-red-400 transition font-medium text-gray-700">
                     {{ opt.label }}
                 </button>
             </div>
-
-            <div class="mt-8 flex justify-between">
-                <button @click="prevQuestion" :disabled="currentIndex === 0" 
-                        class="text-gray-400 hover:text-red-500 font-medium px-4 py-2 disabled:opacity-30 disabled:cursor-not-allowed transition">
+            <div class="mt-8">
+                <button @click="prevQuestion" :disabled="currentIndex === 0" class="text-gray-400 hover:text-red-500 font-medium px-4 py-2 disabled:opacity-30 disabled:cursor-not-allowed transition">
                     &larr; 返回上一题
                 </button>
             </div>
         </div>
 
-        <!-- 状态4：结果页 -->
-        <div v-if="step === 'result'" class="bg-gray-50 flex-1">
-            <!-- 角色展示区 -->
+        <!-- 结果页 (保持原样) -->
+        <div v-if="step === 'result'" class="bg-gray-50">
             <div class="bg-gradient-to-br from-red-600 to-red-900 text-white p-8 text-center relative overflow-hidden">
-                <div class="text-red-200 font-bold tracking-widest text-sm mb-2">成分代码: {{ finalResultCode }}</div>
+                <div class="text-red-200 font-bold tracking-widest text-sm mb-2">你的例会成分代码：{{ finalResultCode }}</div>
                 <h2 class="text-3xl font-black mb-1">{{ matchedCharacter.title }}</h2>
                 <h3 class="text-2xl font-bold mb-6 opacity-90">—— {{ matchedCharacter.name }} ——</h3>
-                
-                <!-- 角色头像区 (加了防崩处理，如果没配图显示占位符) -->
-                <div class="w-40 h-40 mx-auto rounded-full border-4 border-white shadow-2xl overflow-hidden bg-white mb-6 flex items-center justify-center">
-                    <img v-if="matchedCharacter.img" :src="matchedCharacter.img" alt="角色图片" class="w-full h-full object-cover">
-                    <span v-else class="text-gray-400 text-sm font-bold">暂无画像</span>
+                <div class="w-40 h-40 mx-auto rounded-full border-4 border-white shadow-2xl overflow-hidden bg-white mb-6">
+                    <img :src="matchedCharacter.img" alt="角色图片" class="w-full h-full object-cover">
                 </div>
-                
-                <div class="italic text-lg font-serif opacity-90 px-4">
-                    “{{ matchedCharacter.quote }}”
-                </div>
+                <div class="italic text-lg font-serif opacity-90 px-4">“{{ matchedCharacter.quote }}”</div>
             </div>
 
-            <div class="p-8">
-                <!-- 雷达图容器 (交给 JS 里的 Chart.js 渲染) -->
+            <div class="p-6 md:p-8">
                 <div class="w-full max-w-md mx-auto mb-8 relative">
                     <canvas id="radarChart"></canvas>
                 </div>
-
-                <!-- 文字解读区 -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
                     <h4 class="font-bold text-gray-800 mb-3 flex items-center">
                         <span class="bg-red-100 text-red-600 px-2 py-1 rounded text-sm mr-2">解读</span>你的组织风格：
                     </h4>
-                    <p class="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
-                        {{ matchedCharacter.desc }}
-                    </p>
-                    <!-- 中立者特殊提示 -->
-                    <p v-if="isNeutral" class="mt-4 text-sm font-bold text-yellow-600">
-                        * 检测到你在多项维度上持中立态度，系统已自动指派特殊的平衡侧角色。
-                    </p>
+                    <p class="text-gray-600 text-sm leading-relaxed whitespace-pre-line">{{ matchedCharacter.desc }}</p>
+                    <p v-if="isNeutral" class="mt-4 text-sm font-bold text-yellow-600">* 检测到你在多项维度上持中立态度，你的风格极具包容性与灵活性。</p>
                 </div>
-
-                <!-- 底部交互区：引导截图与重测 -->
                 <div class="text-center border-t border-gray-200 pt-8 pb-4">
-                    <p class="text-gray-500 font-medium mb-5 text-sm tracking-widest">
-                        ▼ 长按保存测试结果，分享给群友 ▼
-                    </p>
-                    <button @click="restartTest" 
-                            class="bg-gray-800 hover:bg-black text-white px-8 py-3 rounded-xl font-bold transition shadow-lg w-full md:w-auto">
-                        再测一次
-                    </button>
+                    <p class="text-gray-500 font-medium mb-5 text-sm tracking-widest">▼ 长按保存上方测试结果，分享给群友 ▼</p>
                 </div>
             </div>
         </div>
@@ -124,8 +182,6 @@
     </div>
 </div>
 
-<!-- 引入外置的核心逻辑文件 -->
-<!-- 确保你的文件夹结构是：根目录下有 index.html 和 js 文件夹，js 文件夹里有 app.js -->
 <script src="./js/app.js"></script>
 </body>
 </html>

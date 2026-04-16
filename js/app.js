@@ -2,7 +2,7 @@ const { createApp, ref, computed, onMounted, nextTick } = Vue;
 
 createApp({
     setup() {
-        const step = ref('start'); 
+        const step = ref('start'); // 流程：start -> pre_survey -> testing -> result
         const questions = ref([]); 
         const charactersData = ref({}); 
         const currentIndex = ref(0); 
@@ -11,6 +11,18 @@ createApp({
         const finalResultCode = ref(''); 
         const matchedCharacter = ref({}); 
         const isNeutral = ref(false); 
+
+        // 【新增】：学术调查问卷的数据绑定
+        const userInfo = ref({
+            university: '',
+            attendCount: '',
+            orgCount: '',
+            roles: [],
+            otherRole: '',
+            isStable: '',
+            audience: '',
+            phone: ''
+        });
 
         const options = [
             { label: "非常符合", value: 2 },
@@ -35,8 +47,27 @@ createApp({
 
         const currentQuestion = computed(() => questions.value[currentIndex.value]);
 
-        const startTest = () => { 
-            step.value = 'testing'; 
+        // 【新增】：校验基本信息是否填写完整
+        const isUserInfoComplete = computed(() => {
+            return userInfo.value.university.trim() !== '' &&
+                   userInfo.value.attendCount !== '' &&
+                   userInfo.value.orgCount !== '' &&
+                   userInfo.value.roles.length > 0 &&
+                   userInfo.value.isStable !== '' &&
+                   userInfo.value.audience !== '';
+        });
+
+        // 从开始页 -> 进入问卷页
+        const startSurvey = () => { 
+            step.value = 'pre_survey'; 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        // 从问卷页 -> 进入核心60题测试
+        const startMainTest = () => {
+            if (!isUserInfoComplete.value) return;
+            step.value = 'testing';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         const selectOption = (value) => {
@@ -62,9 +93,7 @@ createApp({
             let dimScores = { BD: 0, AC: 0, UI: 0, HE: 0, RT: 0, WP: 0 };
             
             answers.value.forEach(ans => {
-                if (ans.dim !== 'OTHER') {
-                    dimScores[ans.dim] += ans.score * ans.pole;
-                }
+                if (ans.dim !== 'OTHER') dimScores[ans.dim] += ans.score * ans.pole;
             });
 
             let resultCode = "";
@@ -87,23 +116,13 @@ createApp({
             }
 
             step.value = 'result';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
             nextTick(() => { 
                 drawRadarChart(dimScores); 
             });
 
-            // 结果算完后，发起静默上传
             silentUploadData();
-        };
-
-        // 新增功能：再测一次
-        const restartTest = () => {
-            answers.value = [];
-            currentIndex.value = 0;
-            // 重新打乱题目顺序，让每次体验稍微不一样
-            questions.value = seededShuffle([...questions.value], Math.random() * 100000);
-            step.value = 'testing';
-            // 滚动到顶部
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         const seededShuffle = (array, seed = 114514) => {
@@ -111,9 +130,7 @@ createApp({
             while (m) {
                 seed = (seed * 9301 + 49297) % 233280;
                 i = Math.floor((seed / 233280) * m--);
-                t = array[m];
-                array[m] = array[i];
-                array[i] = t;
+                t = array[m]; array[m] = array[i]; array[i] = t;
             }
             return array;
         };
@@ -154,26 +171,29 @@ createApp({
             });
         };
 
-        // ========== 核心：无感静默上传 ==========
         const silentUploadData = () => {
+            // 【重要数据处理】：把学术调查数据和答题明细打包成一个大 JSON，塞进 answers 里
+            const combinedData = {
+                researchInfo: userInfo.value,
+                testAnswers: answers.value
+            };
+
             const payload = {
                 result: finalResultCode.value,
                 character: matchedCharacter.value.name || "未知",
                 isNeutral: isNeutral.value ? 'true' : 'false',
                 submitTime: new Date().toISOString(),
-                answers: JSON.stringify(answers.value) 
+                answers: JSON.stringify(combinedData) // 完美兼容你原有的阿里云后台，无需改库！
             };
 
             // 【务必填写你的阿里云函数公网地址】
             const WEBHOOK_URL = "https://savesurvey-wdzwrthfoe.cn-hangzhou.fcapp.run";
 
-            // Fire and forget: 发出请求即可，不等待结果，不处理报错，不在界面显示
             fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             }).catch(e => {
-                // 如果用户网不好断了，后台报错就行，用户界面依然正常显示结果，体验完全不受影响
                 console.log("Analytics sync failed, but it's okay.");
             });
         };
@@ -181,7 +201,8 @@ createApp({
         return { 
             step, questions, currentIndex, currentQuestion, options, 
             finalResultCode, isNeutral, matchedCharacter, 
-            startTest, selectOption, prevQuestion, restartTest
+            userInfo, isUserInfoComplete,
+            startSurvey, startMainTest, selectOption, prevQuestion
         };
     }
 }).mount('#app');
